@@ -83,7 +83,7 @@ SETTING_COLUMNS_BIN: dict[str, str] = {
     "g3_オーガ逆転トルク設定":     "逆転トルク設定_kNm",
     "g9_オーガ正転スピード設定":   "オーガ正転スピード設定_0.1rpm",
     "g10_オーガ逆転スピード設定":  "オーガ逆転スピード設定_0.1rpm",
-    "h1_チャック正転トルク設定":   "チャック正転スピード設定_0.1rpm",   # バイナリに正転トルク設定は1系統
+    "h1_チャック正転トルク設定":   None,                                # バイナリに独立したトルク設定なし
     "h2_チャック正転トルク下限設定": None,                               # バイナリに無し
     "h3_チャック逆転トルク設定":   None,                                 # バイナリに無し
     "h7_チャック正転スピード設定": "チャック正転スピード設定_0.1rpm",
@@ -157,8 +157,8 @@ N_VALUE_BINS: dict[str, list[tuple[float, float, str]]] = {
     ],
 }
 
-# N値拒否（99999）の代替値
-N_REFUSE_SUBSTITUTE = 60.0
+# N値拒否（99999）の代替値（打撃拒否時に使用する代替 N 値）
+N_VALUE_WHEN_REFUSED = 60.0
 
 
 # ---------------------------------------------------------------------------
@@ -435,7 +435,7 @@ def parse_borehole_xml(xml_path: Path) -> BoreholeData:
         start_depth_m: Optional[float] = None
         total_hits: Optional[int] = None
         total_pen_raw: Optional[int] = None
-        備考 = ""
+        spt_remarks = ""
 
         for child in spt_elem:
             tag = child.tag
@@ -456,7 +456,7 @@ def parse_borehole_xml(xml_path: Path) -> BoreholeData:
                 except ValueError:
                     pass
             elif tag.endswith("_備考") and text:
-                備考 = text
+                spt_remarks = text
 
         if start_depth_m is None or total_hits is None:
             continue
@@ -470,13 +470,13 @@ def parse_borehole_xml(xml_path: Path) -> BoreholeData:
                 total_pen_mm = total_pen_raw
 
         # N値計算
-        if total_hits == 0 and "自沈" in 備考:
+        if total_hits == 0 and "自沈" in spt_remarks:
             n_value = 0.0
         elif total_pen_mm is not None and total_pen_mm >= 300:
             n_value = float(total_hits)
         else:
             # 打撃拒否（300mm 未到達）
-            n_value = N_REFUSE_SUBSTITUTE
+            n_value = N_VALUE_WHEN_REFUSED
 
         spt_points.append((start_depth_m * 1000.0, n_value))
 
@@ -558,7 +558,7 @@ def parse_borehole_pilx_footer(footer_text: str, source_file: str) -> BoreholeDa
                                 depth_cm = float(parts[0])
                                 n_raw = float(parts[1])
                                 if n_raw >= 999:
-                                    n_val = N_REFUSE_SUBSTITUTE
+                                    n_val = N_VALUE_WHEN_REFUSED
                                 else:
                                     n_val = n_raw
                                 spt_points.append((depth_cm * 10.0, n_val))
@@ -759,15 +759,11 @@ def parse_press_in_binary(bin_path: Path) -> list[PressInRecord]:
 
     # レコード長の自動検出
     # 192 バイト: 拡張フォーマット（例: SY75 NG ファイル）
-    # 128 バイト: 標準フォーマット（小さな余剰バイトは無視）
+    # 128 バイト: 標準フォーマット（余剰バイトは無視）
     if data_size % 192 == 0:
         record_size = 192
     else:
         record_size = 128
-        remainder = data_size % 128
-        if remainder >= 128:
-            print(f"  [警告] バイナリファイルのレコード長が不定: {bin_path.name} "
-                  f"(data_size={data_size}, remainder={remainder})", file=sys.stderr)
 
     num_records = data_size // record_size
     print(f"  バイナリ: {num_records} レコード (record_size={record_size}B)")
