@@ -1224,8 +1224,13 @@ function renderPage(page) {
 }
 
 function escHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+
+const SCROLL_ANIMATION_DELAY = 50;
+const CHART_COLOR_PALETTE = [
+  '#1a56db','#059669','#d97706','#7c3aed','#db2777','#0891b2','#65a30d','#9f1239'
+];
 
 function selectAnswer(globalIdx, choiceIdx) {
   if (answers[globalIdx] !== null) return;
@@ -1260,7 +1265,7 @@ function selectAnswer(globalIdx, choiceIdx) {
   card.appendChild(expDiv);
 
   // Smooth scroll to explanation
-  setTimeout(() => expDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+  setTimeout(() => expDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), SCROLL_ANIMATION_DELAY);
 }
 
 function prevPage() {
@@ -1315,9 +1320,6 @@ function showResults() {
 
   const cats = Object.keys(catStats);
   const pcts = cats.map(c => Math.round((catStats[c].correct / catStats[c].total) * 100));
-  const colors = [
-    '#1a56db','#059669','#d97706','#7c3aed','#db2777','#0891b2','#65a30d','#9f1239'
-  ];
 
   // Radar chart
   const radarCtx = document.getElementById('radar-chart').getContext('2d');
@@ -1359,8 +1361,8 @@ function showResults() {
       datasets: [{
         label: '正答率 (%)',
         data: pcts,
-        backgroundColor: cats.map((_, i) => colors[i % colors.length] + 'cc'),
-        borderColor: cats.map((_, i) => colors[i % colors.length]),
+        backgroundColor: cats.map((_, i) => CHART_COLOR_PALETTE[i % CHART_COLOR_PALETTE.length] + 'cc'),
+        borderColor: cats.map((_, i) => CHART_COLOR_PALETTE[i % CHART_COLOR_PALETTE.length]),
         borderWidth: 1,
         borderRadius: 5,
       }]
@@ -1404,13 +1406,14 @@ function showResults() {
       const idx = cats.indexOf(cat);
       const pct = pcts[idx];
       const color = pct >= 70 ? '#16a34a' : pct >= 40 ? '#d97706' : '#dc2626';
+      const pctLabel = pct + '%';
       const tip = showTip && TIPS[cat] ? \`<div class="tip-box">💡 <b>学習ヒント：</b>\${escHtml(TIPS[cat])}</div>\` : '';
       return \`<div class="cat-row">
         <span class="cat-name">\${escHtml(cat)}</span>
         <div class="cat-bar-outer">
           <div class="cat-bar-inner" style="width:\${pct}%;background:\${color}"></div>
         </div>
-        <span class="cat-pct" style="color:\${color}">\${pct}%</span>
+        <span class="cat-pct" style="color:\${color}">\${pctLabel}</span>
       </div>\${tip}\`;
     }).join('');
   }
