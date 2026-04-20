@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>知財管理クイズ（55問）</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #1a56db;
+      --primary-dark: #1043a0;
+      --secondary: #eef2ff;
+      --correct: #16a34a;
+      --correct-bg: #dcfce7;
+      --correct-border: #86efac;
+      --wrong: #dc2626;
+      --wrong-bg: #fee2e2;
+      --wrong-border: #fca5a5;
+      --border: #d1d5db;
+      --card-bg: #ffffff;
+      --page-bg: #f3f4f6;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --radius: 10px;
+      --shadow: 0 2px 8px rgba(0,0,0,.10);
+    }
+
+    body {
+      font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      background: var(--page-bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ─── Header ─── */
+    header {
+      background: var(--primary);
+      color: #fff;
+      padding: 1rem 1.25rem;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 2px 6px rgba(0,0,0,.2);
+    }
+    header h1 { font-size: clamp(1rem, 4vw, 1.5rem); letter-spacing: .03em; }
+
+    /* ─── Progress bar ─── */
+    #progress-wrap {
+      background: #fff;
+      padding: .5rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      position: sticky;
+      top: 56px;
+      z-index: 100;
+    }
+    #progress-label { font-size: .75rem; color: var(--text-muted); white-space: nowrap; }
+    #progress-bar-outer {
+      flex: 1;
+      height: 8px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    #progress-bar-inner {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 99px;
+      transition: width .4s;
+      width: 0%;
+    }
+    #progress-count { font-size: .75rem; color: var(--text-muted); white-space: nowrap; }
+
+    /* ─── Main layout ─── */
+    main { max-width: 800px; margin: 0 auto; padding: 1.5rem 1rem 5rem; }
+
+    /* ─── Screens ─── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ─── Start screen ─── */
+    #start-screen {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+    .start-icon { font-size: 4rem; margin-bottom: 1rem; }
+    .start-title { font-size: clamp(1.3rem, 4vw, 1.8rem); font-weight: 700; margin-bottom: .75rem; }
+    .start-desc { color: var(--text-muted); line-height: 1.8; margin-bottom: 1.5rem; max-width: 480px; margin-left: auto; margin-right: auto; }
+    .tag-cloud { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; margin-bottom: 2rem; }
+    .tag {
+      background: var(--secondary);
+      color: var(--primary);
+      border: 1px solid #c7d7ff;
+      border-radius: 99px;
+      padding: .25rem .85rem;
+      font-size: .8rem;
+      font-weight: 600;
+    }
+
+    /* ─── Buttons ─── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .4rem;
+      padding: .75rem 2rem;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+      text-decoration: none;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: #e5e7eb; color: #374151; }
+    .btn-secondary:hover { background: #d1d5db; }
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--primary);
+      color: var(--primary);
+    }
+    .btn-outline:hover { background: var(--secondary); }
+
+    /* ─── Quiz page ─── */
+    .page-indicator {
+      font-size: .85rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    /* ─── Question card ─── */
+    .q-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow);
+      border: 1.5px solid var(--border);
+    }
+    .q-header {
+      display: flex;
+      align-items: flex-start;
+      gap: .75rem;
+      margin-bottom: 1rem;
+    }
+    .q-num {
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      width: 2rem;
+      height: 2rem;
+      min-width: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .85rem;
+      font-weight: 700;
+    }
+    .q-cat {
+      font-size: .75rem;
+      background: var(--secondary);
+      color: var(--primary);
+      border-radius: 99px;
+      padding: .15rem .6rem;
+      font-weight: 600;
+      margin-bottom: .35rem;
+      display: inline-block;
+    }
+    .q-text { font-size: 1rem; font-weight: 600; line-height: 1.6; }
+
+    /* ─── Choices ─── */
+    .choices { display: flex; flex-direction: column; gap: .6rem; }
+    .choice-btn {
+      width: 100%;
+      text-align: left;
+      padding: .75rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: #fff;
+      cursor: pointer;
+      font-size: .95rem;
+      line-height: 1.5;
+      transition: border-color .15s, background .15s;
+      display: flex;
+      align-items: flex-start;
+      gap: .6rem;
+    }
+    .choice-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+      background: var(--secondary);
+    }
+    .choice-btn:disabled { cursor: default; }
+    .choice-label {
+      font-weight: 700;
+      min-width: 1.4rem;
+      color: var(--text-muted);
+    }
+
+    .choice-btn.correct {
+      border-color: var(--correct-border);
+      background: var(--correct-bg);
+    }
+    .choice-btn.correct .choice-label { color: var(--correct); }
+    .choice-btn.wrong {
+      border-color: var(--wrong-border);
+      background: var(--wrong-bg);
+    }
+    .choice-btn.wrong .choice-label { color: var(--wrong); }
+
+    /* ─── Explanation ─── */
+    .explanation {
+      margin-top: .85rem;
+      padding: .85rem 1rem;
+      border-radius: 8px;
+      font-size: .9rem;
+      line-height: 1.7;
+      display: none;
+    }
+    .explanation.show { display: block; }
+    .explanation.correct-exp {
+      background: #f0fdf4;
+      border-left: 4px solid var(--correct);
+      color: #14532d;
+    }
+    .explanation.wrong-exp {
+      background: #fff1f2;
+      border-left: 4px solid var(--wrong);
+      color: #7f1d1d;
+    }
+    .exp-title {
+      font-weight: 700;
+      margin-bottom: .3rem;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+
+    /* ─── Navigation ─── */
+    .nav-wrap {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .nav-wrap > * { flex: 1; min-width: 120px; }
+    .btn-next { text-align: right; }
+
+    /* ─── Results screen ─── */
+    #results-screen { padding-top: .5rem; }
+    .score-hero {
+      text-align: center;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 2.5rem 1rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .score-label { font-size: 1rem; color: var(--text-muted); margin-bottom: .25rem; }
+    .score-value {
+      font-size: clamp(3rem, 10vw, 5rem);
+      font-weight: 900;
+      color: var(--primary);
+      line-height: 1;
+    }
+    .score-denom { font-size: 1.5rem; font-weight: 400; color: var(--text-muted); }
+    .score-msg { margin-top: .75rem; font-size: 1.05rem; font-weight: 600; }
+    .correct-count { font-size: .9rem; color: var(--text-muted); margin-top: .35rem; }
+
+    /* ─── Category results ─── */
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 1.5rem 0 .75rem;
+      padding-left: .75rem;
+      border-left: 4px solid var(--primary);
+    }
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 560px) {
+      .chart-grid { grid-template-columns: 1fr; }
+    }
+    .chart-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 1rem;
+      box-shadow: var(--shadow);
+    }
+    .chart-card canvas { width: 100% !important; }
+
+    /* ─── Strength/Weakness list ─── */
+    .analysis-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 1rem;
+    }
+    .analysis-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: .75rem;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+    .cat-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .5rem 0;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .cat-row:last-child { border-bottom: none; }
+    .cat-name { flex: 1; font-size: .9rem; }
+    .cat-bar-outer {
+      width: 120px;
+      height: 10px;
+      background: #e5e7eb;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .cat-bar-inner { height: 100%; border-radius: 99px; }
+    .cat-pct { font-size: .85rem; font-weight: 700; min-width: 3.5rem; text-align: right; }
+    .tip-box {
+      background: #fefce8;
+      border: 1px solid #fde047;
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      font-size: .85rem;
+      line-height: 1.6;
+      margin-top: .5rem;
+    }
+
+    /* ─── Retry button ─── */
+    .retry-wrap { text-align: center; margin-top: 2rem; }
+
+    /* ─── Mobile tweaks ─── */
+    @media (max-width: 480px) {
+      .q-card { padding: 1rem; }
+      .choice-btn { font-size: .88rem; padding: .65rem .85rem; }
+      .nav-wrap { flex-direction: column; }
+      .nav-wrap > * { min-width: unset; width: 100%; }
+      .btn-next { text-align: center; }
+      .cat-bar-outer { width: 80px; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>📚 知財管理クイズ（55問）</h1>
+</header>
+
+<div id="progress-wrap">
+  <span id="progress-label">回答済み</span>
+  <div id="progress-bar-outer"><div id="progress-bar-inner"></div></div>
+  <span id="progress-count">0 / 55</span>
+</div>
+
+<main>
+  <!-- ─── Start Screen ─── -->
+  <div id="start-screen" class="screen active">
+    <div class="start-icon">📝</div>
+    <div class="start-title">知財管理 実力チェック</div>
+    <p class="start-desc">
+      特許法・実用新案法・意匠法・商標法・著作権法など<br>
+      知的財産に関する全55問にチャレンジしましょう！<br>
+      10問ごとにページが変わり、最後に結果を分析します。
+    </p>
+    <div class="tag-cloud">
+      <span class="tag">特許法 15問</span>
+      <span class="tag">実用新案法 5問</span>
+      <span class="tag">意匠法 6問</span>
+      <span class="tag">商標法 8問</span>
+      <span class="tag">著作権法 8問</span>
+      <span class="tag">不正競争防止法 5問</span>
+      <span class="tag">国際条約・制度 5問</span>
+      <span class="tag">知財管理実務 3問</span>
+    </div>
+    <button class="btn btn-primary" onclick="startQuiz()">▶ クイズを開始する</button>
+  </div>
+
+  <!-- ─── Quiz Screen ─── -->
+  <div id="quiz-screen" class="screen">
+    <div id="page-indicator" class="page-indicator"></div>
+    <div id="questions-container"></div>
+    <div class="nav-wrap">
+      <div>
+        <button id="btn-prev" class="btn btn-secondary" onclick="prevPage()">← 前のページ</button>
+      </div>
+      <div class="btn-next">
+        <button id="btn-next" class="btn btn-primary" onclick="nextPage()">次のページ →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Results Screen ─── -->
+  <div id="results-screen" class="screen">
+    <div class="score-hero">
+      <div class="score-label">あなたのスコア</div>
+      <div class="score-value" id="score-value">0<span class="score-denom">/100</span></div>
+      <div class="score-msg" id="score-msg"></div>
+      <div class="correct-count" id="correct-count"></div>
+    </div>
+
+    <div class="section-title">📊 カテゴリ別 正答率グラフ</div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <canvas id="radar-chart"></canvas>
+      </div>
+      <div class="chart-card">
+        <canvas id="bar-chart"></canvas>
+      </div>
+    </div>
+
+    <div class="section-title">✅ 得意分野（正答率 70%以上）</div>
+    <div class="analysis-card" id="strengths-card">
+      <div id="strengths-list"></div>
+    </div>
+
+    <div class="section-title">⚠️ 苦手分野（正答率 70%未満）</div>
+    <div class="analysis-card" id="weaknesses-card">
+      <div id="weaknesses-list"></div>
+    </div>
+
+    <div class="retry-wrap">
+      <button class="btn btn-outline" onclick="retryQuiz()">🔄 もう一度チャレンジ</button>
+    </div>
+  </div>
+</main>
+
+<script>
+const QUESTIONS = [
+  // ── 特許法 (1–15) ──────────────────────────────────────────
+  {
+    cat: "特許法",
+    q: "特許法における「発明」の定義として最も正確なものはどれか。",
+    choices: [
+      "自然法則を利用した技術的思想の創作のうち高度のもの",
+      "自然法則を利用した技術的思想の創作",
+      "技術的思想の創作のうち高度のもの",
+      "自然法則そのものの発見"
+    ],
+    answer: 0,
+    explain: "特許法第2条第1項は、発明を「自然法則を利用した技術的思想の創作のうち高度のもの」と定義します。単なる「技術的思想の創作」（高度性を問わない）は実用新案の保護対象です。数学的公式や自然法則そのものは発明に含まれません。"
+  },
+  {
+    cat: "特許法",
+    q: "特許権の存続期間の起算点と期間の組み合わせとして正しいものはどれか。",
+    choices: [
+      "登録日から20年",
+      "出願日から20年",
+      "出願日から25年",
+      "登録日から25年"
+    ],
+    answer: 1,
+    explain: "特許法第67条により、特許権の存続期間は特許出願日から20年です。医薬品・農薬など一定の場合は、最長5年の延長登録制度があります（第67条の2）。"
+  },
+  {
+    cat: "特許法",
+    q: "特許出願は原則として出願日から何ヶ月後に公開されるか。",
+    choices: [
+      "出願日から12ヶ月後",
+      "出願日から18ヶ月後",
+      "出願日から24ヶ月後",
+      "審査請求日から12ヶ月後"
+    ],
+    answer: 1,
+    explain: "特許法第64条（出願公開）により、特許出願は、その出願の日（優先権主張がある場合は最先の優先日）から1年6ヶ月（18ヶ月）を経過したときに公開されます。出願人が早期公開を望む場合は出願公開の請求ができます。"
+  },
+  {
+    cat: "特許法",
+    q: "特許出願の審査請求期間として正しいものはどれか。",
+    choices: [
+      "出願日から1年以内",
+      "出願日から3年以内",
+      "出願日から5年以内",
+      "公開日から3年以内"
+    ],
+    answer: 1,
+    explain: "特許法第48条の3により、特許出願の審査請求は出願の日から3年以内に行わなければなりません。この期間内に審査請求が行われない場合、出願は取り下げたものとみなされます（みなし取下げ）。"
+  },
+  {
+    cat: "特許法",
+    q: "特許法における新規性喪失の例外（グレースピリオド）の適用期間はどれか。",
+    choices: [
+      "公表日から3ヶ月以内",
+      "公表日から6ヶ月以内",
+      "公表日から1年以内",
+      "公表日から2年以内"
+    ],
+    answer: 2,
+    explain: "特許法第30条（新規性喪失の例外）では、発明者や出願人等が公表した発明について、公表日から1年以内に特許出願すれば新規性・進歩性の判断において公表前の状態として扱われます（2012年の改正で6ヶ月から1年に延長されました）。"
+  },
+  {
+    cat: "特許法",
+    q: "特許権の効力が及ばない行為として、特許法が明示しているものはどれか。",
+    choices: [
+      "業として特許発明を製造する行為",
+      "試験・研究のためにする特許発明の実施",
+      "特許製品を国内で販売する行為",
+      "特許発明を利用した新製品の開発"
+    ],
+    answer: 1,
+    explain: "特許法第69条第1項は「特許権の効力は、試験又は研究のためにする特許発明の実施には、及ばない」と規定しています。これにより、学術目的の実験や研究開発段階の実施は侵害に当たりません。"
+  },
+  {
+    cat: "特許法",
+    q: "職務発明について特許法が定める内容として正しいものはどれか。",
+    choices: [
+      "会社が行った職務発明の特許を受ける権利は当然に会社に帰属する",
+      "従業者が行った職務発明の特許を受ける権利は、契約・勤務規則等で会社に帰属させることができる",
+      "職務発明の特許を受ける権利は、常に発明した従業者に帰属する",
+      "職務発明に係る特許権は、必ず会社と発明者の共有となる"
+    ],
+    answer: 1,
+    explain: "特許法第35条（職務発明）では、従業者が行った職務発明について、使用者が契約・勤務規則等で予め特許を受ける権利を使用者に帰属させる旨を定めることができます（2015年改正）。会社帰属の場合、発明者には相当の金銭的利益を与えなければなりません。"
+  },
+  {
+    cat: "特許法",
+    q: "先使用権（先使用による通常実施権）が認められる要件として正しいものはどれか。",
+    choices: [
+      "他人の特許出願と同日以前から日本国内で発明の実施をしていること",
+      "他人の特許出願の際に日本国内でその発明の実施をする事業をしていること、またはその事業の準備をしていること",
+      "他人の特許権が存続期間満了になった後に実施を開始していること",
+      "特許出願の公開前から発明の実施事業をしていること"
+    ],
+    answer: 1,
+    explain: "特許法第79条（先使用権）は、特許出願の際に国内でその発明の実施をする事業またはその準備をしていた者に、その実施・準備の範囲内で通常実施権を認めます。この権利は実施または準備していた事業に附随するため、事業と一緒でなければ移転できません。"
+  },
+  {
+    cat: "特許法",
+    q: "専用実施権と通常実施権の違いとして正しいものはどれか。",
+    choices: [
+      "専用実施権者は特許権者の許可なく第三者に再実施権を設定できる",
+      "通常実施権者は特許権者に無断で特許発明を独占的に実施できる",
+      "専用実施権者は設定された範囲で独占的に実施でき、特許権者も実施できなくなる場合がある",
+      "通常実施権には登録が必要で、専用実施権には登録は不要である"
+    ],
+    answer: 2,
+    explain: "専用実施権（第77条）は設定された範囲で独占的な実施権であり、専用実施権者が設定された範囲について特許権者も実施できなくなります。通常実施権（第78条）は非独占的で複数設定可能です。専用実施権には特許原簿への登録が効力要件です。"
+  },
+  {
+    cat: "特許法",
+    q: "特許無効審判について正しいものはどれか。",
+    choices: [
+      "特許権の存続期間中のみ請求できる",
+      "何人も、特許権の消滅後も請求することができる",
+      "特許権者のみが自己の特許に対して請求できる",
+      "審判の請求期間は特許設定登録日から5年以内に限られる"
+    ],
+    answer: 1,
+    explain: "特許法第123条により、特許無効審判は特許権の消滅後も請求することができます（ただし、消滅後に利害関係人のみ請求可能）。存続中は何人でも請求できます（ただし冒認出願等の一部を除く）。"
+  },
+  {
+    cat: "特許法",
+    q: "特許出願の分割について正しいものはどれか。",
+    choices: [
+      "分割出願は元の出願が査定・審決確定後でも可能である",
+      "分割出願は、一定の時期までに行うと原出願の出願日を遡及して享受できる",
+      "分割出願のできる時期は拒絶理由通知に対する意見書提出期間内のみである",
+      "分割出願の出願日は分割申請を行った日が起算日となる"
+    ],
+    answer: 1,
+    explain: "特許法第44条（出願の分割）により、分割出願は元の出願（原出願）の出願日に出願したものとみなされます（遡及効）。分割は、特許査定前の補正できる時期や拒絶査定不服審判中など一定期間内に行う必要があります。"
+  },
+  {
+    cat: "特許法",
+    q: "パリ条約に基づく優先権主張の期間として正しいものはどれか。",
+    choices: [
+      "最初の出願日から6ヶ月以内",
+      "最初の出願日から12ヶ月以内",
+      "最初の出願日から18ヶ月以内",
+      "最初の出願日から30ヶ月以内"
+    ],
+    answer: 1,
+    explain: "パリ条約第4条C(1)により、特許・実用新案に関する優先権の期間は最初の出願日から12ヶ月です（意匠・商標は6ヶ月）。この期間内に他のパリ条約加盟国に出願すれば、最初の出願日に出願したものとして取り扱われます。"
+  },
+  {
+    cat: "特許法",
+    q: "特許侵害に対する救済手段として、特許法が定めていないものはどれか。",
+    choices: [
+      "差止請求権",
+      "損害賠償請求権",
+      "刑事罰（侵害罪）",
+      "行政庁による輸入差止め命令"
+    ],
+    answer: 3,
+    explain: "特許法は、差止請求権（第100条）・損害賠償請求権（民法第709条も根拠）・信用回復措置請求・刑事罰（第196条）を定めています。輸入差止めは関税法・税関の手続きによるものであり、特許法が直接定める手続きではありません。"
+  },
+  {
+    cat: "特許法",
+    q: "特許権の侵害における損害額の推定規定として正しいものはどれか。",
+    choices: [
+      "侵害者の利益額を損害額と推定する規定は存在しない",
+      "侵害者が侵害行為により受けた利益の額を特許権者の損害額と推定する",
+      "損害額は常に特許権の登録料の10倍と推定される",
+      "特許権者は損害の立証なく、自動的に一定額を請求できる"
+    ],
+    answer: 1,
+    explain: "特許法第102条第2項では、侵害者が侵害行為によって受けた利益の額を特許権者の損害の額と推定しています。また、第1項では譲渡数量×1個あたり利益による計算方法、第3項では実施料相当額による計算方法も規定されています。"
+  },
+  {
+    cat: "特許法",
+    q: "特許出願において進歩性（inventive step）が否定されるのはどのような場合か。",
+    choices: [
+      "出願前に国内で公知の発明と同一の場合",
+      "出願前の公知技術から当業者が容易に発明できる場合",
+      "発明者が複数いる共同発明の場合",
+      "外国で既に特許が登録されている発明の場合"
+    ],
+    answer: 1,
+    explain: "特許法第29条第2項（進歩性）は、出願前に公知または公用となった技術（先行技術）から「当業者が容易に発明をすることができた」ときは特許を受けられないと規定します。当業者は、その技術分野の専門家（平均的知識を持つ者）を指します。"
+  },
+
+  // ── 実用新案法 (16–20) ────────────────────────────────────
+  {
+    cat: "実用新案法",
+    q: "実用新案登録の保護対象として正しいものはどれか。",
+    choices: [
+      "物品の形状・構造・組み合わせに係る考案",
+      "方法・製造方法に係る考案",
+      "自然法則を利用した技術的思想のうち高度のもの",
+      "ソフトウェアに係る考案"
+    ],
+    answer: 0,
+    explain: "実用新案法第3条は、「物品の形状、構造または組み合わせに係る考案」を保護対象とします。特許法と異なり、方法やソフトウェアに係る発明は含まれません。また「高度性」は要求されず、小発明（考案）を保護します。"
+  },
+  {
+    cat: "実用新案法",
+    q: "実用新案登録制度の特徴として正しいものはどれか。",
+    choices: [
+      "特許と同様に実体審査を経て登録される",
+      "方式審査と基礎的要件審査のみで、実体審査なく登録される",
+      "審査請求後に実体審査が行われる",
+      "登録後3年間は実体審査が猶予される"
+    ],
+    answer: 1,
+    explain: "実用新案は「無審査登録主義」を採用しており、方式審査と基礎的要件（産業上の利用可能性・物品性など）の審査のみで実体審査なく登録されます。そのため権利行使の際は実用新案技術評価書の提示が義務付けられています。"
+  },
+  {
+    cat: "実用新案法",
+    q: "実用新案権の存続期間として正しいものはどれか。",
+    choices: [
+      "登録日から10年",
+      "出願日から10年",
+      "出願日から20年",
+      "登録日から20年"
+    ],
+    answer: 1,
+    explain: "実用新案法第15条により、実用新案権の存続期間は出願日から10年です（特許権の20年より短い）。登録日ではなく出願日が起算点となります。"
+  },
+  {
+    cat: "実用新案法",
+    q: "実用新案権を行使する際に、権利者が相手方に提示しなければならないものはどれか。",
+    choices: [
+      "特許出願の写し",
+      "実用新案技術評価書",
+      "特許庁長官の実施許諾証明書",
+      "裁判所の予備的差止命令"
+    ],
+    answer: 1,
+    explain: "実用新案法第29条の2により、実用新案権者または専用実施権者は、権利行使の際に実用新案技術評価書を提示して警告した後でなければ、権利を行使できません。無審査登録主義の弊害を防ぐための規定です。"
+  },
+  {
+    cat: "実用新案法",
+    q: "実用新案登録出願を特許出願に変更できる期間として正しいものはどれか。",
+    choices: [
+      "実用新案登録後はいつでも変更できる",
+      "実用新案登録出願日から3年以内",
+      "実用新案登録の設定登録日から9年10ヶ月以内（存続期間満了3ヶ月前まで）",
+      "実用新案登録出願から1年以内のみ"
+    ],
+    answer: 1,
+    explain: "実用新案登録出願から特許出願への変更は、実用新案登録出願の日から3年以内に行う必要があります（特許法第46条の2）。この変更出願は実用新案出願日に遡及して出願したものとして扱われます。"
+  },
+
+  // ── 意匠法 (21–26) ────────────────────────────────────────
+  {
+    cat: "意匠法",
+    q: "意匠法における「意匠」の定義として正しいものはどれか。",
+    choices: [
+      "物品、建築物または画像のデザイン全般",
+      "物品（物品の部分を含む）の形状、模様もしくは色彩またはこれらの結合であって、視覚を通じて美感を起こさせるもの",
+      "工業製品の外観的なデザインのみ",
+      "商品の外観に施された特定の模様または色彩"
+    ],
+    answer: 1,
+    explain: "意匠法第2条第1項は、意匠を「物品（物品の部分を含む）の形状、模様もしくは色彩またはこれらの結合であって、視覚を通じて美感を起こさせるもの」と定義します。2020年改正により建築物・内装・画像も対象に追加されました。"
+  },
+  {
+    cat: "意匠法",
+    q: "意匠権の存続期間として正しいものはどれか（2020年改正後）。",
+    choices: [
+      "設定登録日から20年",
+      "出願日から25年",
+      "設定登録日から25年",
+      "出願日から20年"
+    ],
+    answer: 1,
+    explain: "2020年の意匠法改正（令和元年改正）により、意匠権の存続期間は「出願日から25年」に改められました（改正前は設定登録日から20年）。国際的なハーグ協定への加盟対応のためです。"
+  },
+  {
+    cat: "意匠法",
+    q: "関連意匠制度について正しいものはどれか。",
+    choices: [
+      "本意匠と類似する意匠を、本意匠の出願日から3年以内に出願できる",
+      "本意匠と類似する意匠を、本意匠の出願日から10年以内に出願できる",
+      "関連意匠の存続期間は本意匠と同じで、本意匠の出願日から25年である",
+      "関連意匠は独立して存続し、本意匠と独立した存続期間を持つ"
+    ],
+    answer: 2,
+    explain: "意匠法第10条の関連意匠制度では、本意匠に類似する意匠を関連意匠として登録できます。関連意匠の存続期間は本意匠の出願日を基準とし、本意匠出願日から25年です（2020年改正後）。本意匠が消滅しても関連意匠は維持可能です。"
+  },
+  {
+    cat: "意匠法",
+    q: "部分意匠制度について正しいものはどれか。",
+    choices: [
+      "物品全体の意匠のみが保護対象であり、部分意匠は保護されない",
+      "物品の部分的なデザインを独立して意匠登録することができる",
+      "部分意匠は意匠権の存続期間が物品全体の意匠と異なる",
+      "部分意匠の登録は複数の物品にまたがる場合のみ認められる"
+    ],
+    answer: 1,
+    explain: "意匠法では部分意匠制度（第2条第1項）により、物品の特定の部分（デザインの独自性のある部分）を独立して保護できます。例えばスマートフォンの特定のボタン形状のみを登録することが可能です。"
+  },
+  {
+    cat: "意匠法",
+    q: "秘密意匠制度について正しいものはどれか。",
+    choices: [
+      "意匠登録後、最長5年間登録内容を秘密にできる",
+      "意匠登録後、最長3年間登録内容を秘密にできる",
+      "意匠出願後から登録まで自動的に秘密扱いとなる",
+      "秘密意匠の期間中は第三者に権利行使できない"
+    ],
+    answer: 1,
+    explain: "意匠法第14条（秘密意匠）により、意匠権者は設定登録から最長3年間、登録意匠の内容を秘密にすることを請求できます。製品の市場投入前に登録を取得しつつ、デザインの公開を遅らせたい場合に利用されます。"
+  },
+  {
+    cat: "意匠法",
+    q: "意匠登録を受けることができないものはどれか。",
+    choices: [
+      "組物（一組の物品）の意匠",
+      "建築物の外観デザイン",
+      "公序良俗に反するおそれがある意匠",
+      "物品の内部構造を模した意匠（外部から視認できるもの）"
+    ],
+    answer: 2,
+    explain: "意匠法第5条は、公の秩序または善良の風俗を害するおそれがある意匠は登録を受けることができないと規定しています。その他、他人の業務に係る物品と混同を生ずるおそれがある意匠、類似する先行意匠がある場合なども不登録事由です。"
+  },
+
+  // ── 商標法 (27–34) ────────────────────────────────────────
+  {
+    cat: "商標法",
+    q: "商標法における「商標」の定義として最も適切なものはどれか。",
+    choices: [
+      "文字、図形、記号のみからなる標識",
+      "人の知覚によって認識することができるもののうち、業として商品・役務について使用するもの",
+      "業として使用する文字・図形・記号・立体的形状・色彩・音のみ",
+      "特定の商品にのみ付される標識"
+    ],
+    answer: 1,
+    explain: "商標法第2条第1項は、商標を「人の知覚によって認識することができるもののうち、文字、図形、記号、立体的形状もしくは色彩またはこれらの結合、音その他政令で定めるものであって、業として商品の生産・証明または譲渡をする者がその商品について使用するもの（役務商標も含む）」と定義します。"
+  },
+  {
+    cat: "商標法",
+    q: "商標権の存続期間と更新について正しいものはどれか。",
+    choices: [
+      "設定登録日から10年で、更新できない",
+      "設定登録日から10年で、10年ごとに何度でも更新できる",
+      "設定登録日から20年で、更新は1回のみ",
+      "設定登録日から25年で、更新できない"
+    ],
+    answer: 1,
+    explain: "商標権の存続期間は商標法第19条により設定登録日から10年です。しかし商標法第20条により、10年ごとに更新申請することで存続期間を何度でも更新できます。適切に維持管理すれば半永久的に権利を保持できます。"
+  },
+  {
+    cat: "商標法",
+    q: "商標法第3条（商標登録の要件）に定める登録できない商標として適切でないものはどれか。",
+    choices: [
+      "自己の業務に係る商品の産地・販売地・品質等のみを表示する標識",
+      "商品の形状（一般的な形状のもの）のみからなる商標",
+      "使用によって自己の業務に係る商品を表示するものとして需要者に認識されている商標",
+      "記述的商標（ありふれた氏・名称のみからなる商標）"
+    ],
+    answer: 2,
+    explain: "商標法第3条第2項は、登録できない商標（識別力なき商標）であっても、「使用の結果、需要者が何人かの業務に係る商品を表示するものとして広く認識されているもの（使用による識別性取得）」は例外として登録できると規定します。これは「使用による顕著性」（secondary meaning）の法理です。"
+  },
+  {
+    cat: "商標法",
+    q: "不使用取消審判について正しいものはどれか。",
+    choices: [
+      "商標権者が登録商標を1年間使用しない場合に請求できる",
+      "商標権者が登録商標を継続して3年以上使用しない場合に請求できる",
+      "不使用取消審判は商標権者自身しか請求できない",
+      "不使用取消審判で取り消された商標は再登録できない"
+    ],
+    answer: 1,
+    explain: "商標法第50条（不使用取消審判）では、継続して3年以上、日本国内において登録商標が使用されていない場合、何人も不使用取消審判を請求できます。審判請求後に使用を開始しても認められない場合があります（駆け込み使用防止）。"
+  },
+  {
+    cat: "商標法",
+    q: "商標法における先使用権（先使用による商標の使用をする権利）について正しいものはどれか。",
+    choices: [
+      "先使用権者は需要者に広く認識された商標について他人の商標権に対抗できるが、業務の拡張まで認められる",
+      "先使用権は登録商標を無効にする効力を持つ",
+      "先使用権者は、他人の商標登録出願の際に商標を使用しており、需要者に広く認識されている場合に認められるが、混同防止表示義務がある",
+      "先使用権は特許法と同様に事業と一緒でなければ移転できない"
+    ],
+    answer: 2,
+    explain: "商標法第32条（先使用権）は、他人の商標登録出願前から不正競争目的なく使用しており、出願の際に周知となっている場合に認められます。ただし商標権者が混同防止を求める場合は、先使用権者は適当な表示をしなければなりません。"
+  },
+  {
+    cat: "商標法",
+    q: "地域団体商標制度について正しいものはどれか。",
+    choices: [
+      "地域の名称と商品の名称を結合した商標を個人でも登録できる制度",
+      "地域名と商品・役務を結合した商標で一定の周知性を有するものを、農協・商工会等の団体が登録できる制度",
+      "地域名のみからなる商標を地方自治体が登録できる制度",
+      "外国の地域名を日本の団体が登録できる制度"
+    ],
+    answer: 1,
+    explain: "商標法第7条の2（地域団体商標）は、「今治タオル」「神戸牛」など地域名と商品・役務名を組み合わせた商標で一定の周知性を有するものを、農業協同組合・商工会・NPO法人等の組合・連合会が出願・登録できる制度です。"
+  },
+  {
+    cat: "商標法",
+    q: "商標法第4条（登録できない商標）に規定される登録不可事由として誤っているものはどれか。",
+    choices: [
+      "国・地方公共団体の記章と同一または類似する商標",
+      "公の秩序または善良の風俗を害するおそれがある商標",
+      "他人の著名な商標と類似する商標（不正の目的がなくても）",
+      "先願に係る他人の登録商標と同一または類似する商標"
+    ],
+    answer: 2,
+    explain: "商標法第4条第1項第19号は、他人の「著名な商標」と同一または類似の商標を「不正の目的をもって使用するもの」について登録を拒絶します。不正の目的がない場合は、この条項による拒絶はされません（ただし他の条項が適用される場合はあります）。"
+  },
+  {
+    cat: "商標法",
+    q: "マドリッド協定議定書（マドプロ）による国際商標登録制度について正しいものはどれか。",
+    choices: [
+      "1つの出願で世界中のすべての国に自動的に商標権が発生する",
+      "1つの国際出願を本国官庁経由でWIPOに提出し、各指定国が一定期間内に拒絶しなければ商標権が発生する",
+      "本国で商標登録なしに国際登録を申請できる",
+      "国際登録は本国の基礎登録が消滅しても5年後以降は独立して存続する"
+    ],
+    answer: 1,
+    explain: "マドリッド協定議定書に基づく国際商標登録制度では、本国（日本）の商標出願または登録を基礎として、WIPOに1つの国際出願を行うことで複数国への出願が可能です。指定国は一定期間（通常18ヶ月）内に拒絶通報を行わなければ権利が発生します。"
+  },
+
+  // ── 著作権法 (35–42) ──────────────────────────────────────
+  {
+    cat: "著作権法",
+    q: "著作権法における「著作物」の定義として正しいものはどれか。",
+    choices: [
+      "あらゆる人間の創作物",
+      "思想または感情を創作的に表現したものであって、文芸・学術・美術・音楽の範囲に属するもの",
+      "登録が完了した創作物",
+      "商業的価値のある創作物"
+    ],
+    answer: 1,
+    explain: "著作権法第2条第1項第1号は、著作物を「思想または感情を創作的に表現したものであって、文芸、学術、美術または音楽の範囲に属するもの」と定義します。登録は不要（無方式主義）で、創作の時点で著作権が発生します。"
+  },
+  {
+    cat: "著作権法",
+    q: "著作権の保護期間（著作財産権）として正しいものはどれか（一般的な場合）。",
+    choices: [
+      "著作者の生存中のみ",
+      "著作者の死後50年まで",
+      "著作者の死後70年まで",
+      "著作物の公表後70年まで"
+    ],
+    answer: 2,
+    explain: "2018年の著作権法改正（TPP対応）により、著作権の保護期間は著作者の死後70年（法人著作・映画著作物は公表後70年）に延長されました（改正前は死後50年）。"
+  },
+  {
+    cat: "著作権法",
+    q: "著作者人格権の内容として誤っているものはどれか。",
+    choices: [
+      "公表権（著作物を公表するかどうかを決める権利）",
+      "氏名表示権（著作者名を表示するかどうかを決める権利）",
+      "同一性保持権（著作物の内容・題号の変更等を禁止する権利）",
+      "譲渡権（著作物の複製物の譲渡を排他的に行う権利）"
+    ],
+    answer: 3,
+    explain: "著作者人格権は①公表権（第18条）②氏名表示権（第19条）③同一性保持権（第20条）の3種です。譲渡権は著作財産権（著作権）の一種であり、著作者人格権ではありません。著作者人格権は著作者の一身に専属し、譲渡できません。"
+  },
+  {
+    cat: "著作権法",
+    q: "著作隣接権を持つ者として認められていないものはどれか。",
+    choices: [
+      "実演家（俳優・歌手等）",
+      "レコード製作者",
+      "放送事業者",
+      "著作物の翻訳者"
+    ],
+    answer: 3,
+    explain: "著作隣接権は、著作物の伝達に貢献する実演家・レコード製作者・放送事業者・有線放送事業者に認められる権利です（著作権法第89条）。翻訳者は著作物の二次的著作物の著作者として著作権を持ちますが、著作隣接権者ではありません。"
+  },
+  {
+    cat: "著作権法",
+    q: "私的使用のための複製（著作権法第30条）として認められないものはどれか。",
+    choices: [
+      "個人が自分で楽しむためにCDを自分のPCに取り込む行為",
+      "家族の間でのみ使用するために映画を録画する行為",
+      "会社の業務のために社員全員が使う資料としてコピーする行為",
+      "個人が購入した電子書籍を自分のタブレットに保存する行為"
+    ],
+    answer: 2,
+    explain: "著作権法第30条の私的使用のための複製は「個人的にまたは家庭内その他これに準ずる限られた範囲内」での使用が要件です。会社の業務目的での複製は「家庭内」の範囲を超えるため私的複製に当たらず、著作権者の許諾が必要です。"
+  },
+  {
+    cat: "著作権法",
+    q: "適法な「引用」（著作権法第32条）の要件として誤っているものはどれか。",
+    choices: [
+      "公表された著作物であること",
+      "引用の目的上正当な範囲内であること",
+      "引用部分と自己の著述部分が明確に区別されていること（主従関係）",
+      "著作権者から事前に許諾を得ていること"
+    ],
+    answer: 3,
+    explain: "著作権法第32条の引用は、著作権者の許諾なしに行える権利制限規定です。要件は①公表された著作物②引用の必然性③主従関係（引用部分が従）④明瞭区別性⑤出所明示（第48条）です。事前許諾は引用の要件ではありません。"
+  },
+  {
+    cat: "著作権法",
+    q: "プログラムの著作物（ソフトウェア）に関する記述として正しいものはどれか。",
+    choices: [
+      "プログラム言語・規約・解法（アルゴリズム）は著作権で保護される",
+      "プログラムの著作権は特許庁への登録で発生する",
+      "プログラムの著作物は著作権法の保護対象であるが、プログラム言語・規約・解法は保護されない",
+      "会社が作成したプログラムは常に個人の著作者に著作権が帰属する"
+    ],
+    answer: 2,
+    explain: "著作権法第10条第1項第9号はプログラムを著作物として保護しますが、第2項で「プログラム言語、規約及び解法」（アルゴリズム）は著作権の保護を受けないと規定します。ソフトウェアのアイデア・アルゴリズムは特許法での保護を検討することになります。"
+  },
+  {
+    cat: "著作権法",
+    q: "法人著作（職務著作）が成立する要件として誤っているものはどれか。",
+    choices: [
+      "法人その他使用者の発意に基づき作成されること",
+      "法人等の業務に従事する者が職務上作成すること",
+      "法人等が自己の著作の名義のもとに公表するものであること",
+      "著作者名を必ず「法人名（担当者名）」の形式で表示すること"
+    ],
+    answer: 3,
+    explain: "著作権法第15条（職務著作）の成立要件は①使用者の発意②職務上の作成③使用者名義の公表です（例外：プログラムは公表名義不問）。著作者名の表示形式について「法人名（担当者名）」という特定形式は要件ではありません。"
+  },
+
+  // ── 不正競争防止法 (43–47) ────────────────────────────────
+  {
+    cat: "不正競争防止法",
+    q: "不正競争防止法における「営業秘密」の3要件として正しいものはどれか。",
+    choices: [
+      "秘密管理性・有用性・非公知性",
+      "秘密管理性・新規性・独創性",
+      "機密性・商業的価値・登録性",
+      "有用性・非公知性・登録性"
+    ],
+    answer: 0,
+    explain: "不正競争防止法第2条第6項は、営業秘密を「秘密として管理されている（秘密管理性）生産方法、販売方法その他の事業活動に有用な（有用性）技術上または営業上の情報であって、公然と知られていないもの（非公知性）」と定義します。"
+  },
+  {
+    cat: "不正競争防止法",
+    q: "不正競争行為として不正競争防止法が規定する「混同惹起行為」の説明として正しいものはどれか。",
+    choices: [
+      "他人の著名な商品等表示と同一または類似の表示を使用し、他人の商品・営業と混同を生じさせる行為",
+      "他人の周知な商品等表示と同一または類似の表示を使用し、他人の商品・営業と混同を生じさせる行為",
+      "類似した商標を登録することで競合他社の商標権を侵害する行為",
+      "商品のパッケージデザインを無断でコピーする行為"
+    ],
+    answer: 1,
+    explain: "不正競争防止法第2条第1項第1号（混同惹起行為）は、他人の「周知な」商品等表示と同一または類似の表示を使用し、他人の商品・営業と混同を生じさせる行為を不正競争としています。「著名な」表示の冒用（第1項第2号）は混同不要です。"
+  },
+  {
+    cat: "不正競争防止法",
+    q: "営業秘密の不正取得・使用行為に対して、不正競争防止法が認めていない救済手段はどれか。",
+    choices: [
+      "差止請求",
+      "損害賠償請求",
+      "刑事罰（罰則の適用）",
+      "特許権の自動付与"
+    ],
+    answer: 3,
+    explain: "不正競争防止法は、差止請求（第3条）・損害賠償請求（第4条）・信用回復措置（第14条）・刑事罰（第21条）を規定していますが、特許権の自動付与は規定していません。営業秘密は秘密を維持することで保護されるもので、特許とは異なります。"
+  },
+  {
+    cat: "不正競争防止法",
+    q: "「著名表示冒用行為」（不正競争防止法第2条第1項第2号）について正しいものはどれか。",
+    choices: [
+      "周知な表示と同一または類似の表示を使用することで成立し、混同が必要",
+      "著名な表示と同一または類似の表示を使用することで成立し、混同は不要",
+      "著名な表示は商標登録されているものに限る",
+      "著名表示冒用行為は差止請求のみ認められ、損害賠償は請求できない"
+    ],
+    answer: 1,
+    explain: "著名表示冒用行為（第2条第1項第2号）は、他人の「著名な」商品等表示と同一または類似の表示を使用する行為で、混同は要件ではありません（ブランドイメージの希釈化防止）。周知表示の混同惹起行為（第1項第1号）とは異なります。"
+  },
+  {
+    cat: "不正競争防止法",
+    q: "不正競争防止法における「技術的制限手段」の回避行為について正しいものはどれか。",
+    choices: [
+      "CD・DVDのコピーガードを個人使用目的で解除することは適法",
+      "映画のDVDの視聴制限（リージョンコード）の解除装置を販売することは不正競争行為となる",
+      "技術的制限手段の回避はいかなる目的でも適法",
+      "技術的制限手段の回避行為に対し損害賠償請求は認められない"
+    ],
+    answer: 1,
+    explain: "不正競争防止法第2条第1項第17号・第18号は、技術的制限手段（コピーガード等）を回避する機能を持つ装置・プログラムを提供する行為を不正競争と規定します。リージョンコード解除装置の販売は規制対象です。"
+  },
+
+  // ── 国際条約・制度 (48–52) ──────────────────────────────
+  {
+    cat: "国際条約・制度",
+    q: "パリ条約の3大原則として正しいものはどれか。",
+    choices: [
+      "内国民待遇の原則・優先権制度・各国特許独立の原則",
+      "相互主義の原則・先願主義・自国民優先の原則",
+      "内国民待遇の原則・最恵国待遇・優先権制度",
+      "自動保護の原則・優先権制度・強制ライセンス制度"
+    ],
+    answer: 0,
+    explain: "パリ条約（工業所有権の保護に関するパリ条約）の3大原則は①内国民待遇の原則（加盟国民に自国民と同等の保護）②優先権制度（最初の出願から一定期間内の他国出願に遡及効）③各国特許独立の原則（各国の知財権は独立）です。"
+  },
+  {
+    cat: "国際条約・制度",
+    q: "TRIPS協定（知的所有権の貿易関連の側面に関する協定）の説明として正しいものはどれか。",
+    choices: [
+      "WIPOが管理する知的財産に関する多国間条約",
+      "WTO（世界貿易機関）の下に設けられた知的財産の保護に関する国際的な最低基準を定める協定",
+      "特許のみを対象とした国際条約",
+      "先進国間のみで締結された地域的な知財保護協定"
+    ],
+    answer: 1,
+    explain: "TRIPS協定（Trade-Related Aspects of Intellectual Property Rights）はWTOの一部をなす多国間協定で、特許・著作権・商標・意匠・地理的表示・営業秘密等の保護に関する国際的な最低基準を定めています。WTO加盟国はすべてTRIPS協定を遵守する義務があります。"
+  },
+  {
+    cat: "国際条約・制度",
+    q: "PCT（特許協力条約）に基づく国際出願の説明として正しいものはどれか。",
+    choices: [
+      "PCT出願をすることで自動的に各指定国で特許権が発生する",
+      "1つの国際出願で複数国への出願手続きを簡素化でき、国内移行手続き後に各国で審査される",
+      "PCT出願の審査結果は各指定国を法的に拘束する",
+      "PCT出願の国際段階での調査結果は公開されない"
+    ],
+    answer: 1,
+    explain: "PCT出願（国際出願）は1つの出願で複数の加盟国（150ヶ国以上）への出願手続きを一本化できます。国際調査・予備審査を経た後、各指定国での「国内移行」手続きを経て、各国の国内法に基づき審査されます。自動的に特許権が生じるわけではありません。"
+  },
+  {
+    cat: "国際条約・制度",
+    q: "ハーグ協定（意匠の国際登録に関するハーグ協定）について正しいものはどれか。",
+    choices: [
+      "1つの国際出願でWIPO経由で複数国に意匠登録を出願できる制度",
+      "商標の国際登録を単一の手続きで行う制度",
+      "特許の国際出願を簡素化する制度",
+      "著作権の国際登録を行う制度"
+    ],
+    answer: 0,
+    explain: "ハーグ協定（ジュネーブ改正協定）は、1つの国際出願でWIPO（世界知的所有権機関）を経由して複数の締約国・機関（EU・日本等）へ意匠登録を出願できる制度です。日本は2015年に加盟しました。"
+  },
+  {
+    cat: "国際条約・制度",
+    q: "WIPO（世界知的所有権機関）の説明として正しいものはどれか。",
+    choices: [
+      "WTOの下部機関として知的財産の国際的保護を管理する機関",
+      "国連の専門機関として知的財産の国際的な保護を促進し、PCT・マドリッド・ハーグ等を管理する機関",
+      "先進国のみが加盟できる知的財産に関する機関",
+      "各国の特許審査を代行する国際的な審査機関"
+    ],
+    answer: 1,
+    explain: "WIPO（World Intellectual Property Organization）は国連の専門機関で、知的財産の国際的な保護促進を目的とし、PCT（特許）・マドリッド協定議定書（商標）・ハーグ協定（意匠）等の国際条約を管理・運営しています。現在193ヶ国以上が加盟しています。"
+  },
+
+  // ── 知財管理実務 (53–55) ────────────────────────────────
+  {
+    cat: "知財管理実務",
+    q: "M&A等における知財デューデリジェンス（知財DD）の目的として最も適切なものはどれか。",
+    choices: [
+      "対象会社の特許権を無効化すること",
+      "対象会社の保有知財の価値・リスク・第三者侵害等を調査・評価し、取引判断や条件交渉に活用すること",
+      "対象会社の従業員の発明を自社に移転させること",
+      "取引先の商標権の有効性を確認すること"
+    ],
+    answer: 1,
+    explain: "知財デューデリジェンス（知財DD）は、M&A・投資・事業提携等の際に対象会社が保有する知財資産（特許・商標・著作権・営業秘密等）の状況を調査し、価値評価・権利の有効性・第三者権利侵害リスク・ライセンス状況等を分析することで、取引意思決定や価格交渉・契約条件の設定に活用するものです。"
+  },
+  {
+    cat: "知財管理実務",
+    q: "特許マップ（パテントマップ）の活用目的として適切でないものはどれか。",
+    choices: [
+      "技術開発の空白領域（ホワイトスペース）の発見",
+      "競合他社の研究開発動向の把握",
+      "特許権の侵害訴訟の自動的な解決",
+      "自社の技術ポジションの把握と戦略立案"
+    ],
+    answer: 2,
+    explain: "特許マップは、特許情報を体系的に整理・分析した図表で、①技術の空白領域の発見②競合他社の開発動向把握③自社技術のポジション分析④権利侵害リスクの事前評価等に活用します。特許侵害訴訟を自動解決する機能はありません。"
+  },
+  {
+    cat: "知財管理実務",
+    q: "オープン＆クローズ戦略の説明として最も適切なものはどれか。",
+    choices: [
+      "すべての技術を特許公開して業界標準化を図る戦略",
+      "標準化・公開すべき技術（オープン）と、特許・秘密管理で独占すべき技術（クローズ）を使い分け、競争優位を最大化する戦略",
+      "自社技術を一切公開しない秘密主義の戦略",
+      "他社特許のライセンスのみで事業を行うノーパテント戦略"
+    ],
+    answer: 1,
+    explain: "オープン＆クローズ戦略は、技術を①標準化・ライセンスアウト等で広く公開しエコシステムを形成する「オープン」領域と②特許・営業秘密で独占し競合との差別化を図る「クローズ」領域に分類し、両者を戦略的に組み合わせて競争優位を確立する知財戦略です。"
+  }
+];
+
+const PAGE_SIZE = 10;
+const TOTAL = QUESTIONS.length; // 55
+
+// State
+let answers = new Array(TOTAL).fill(null); // null = unanswered, index = chosen
+let currentPage = 0;
+const totalPages = Math.ceil(TOTAL / PAGE_SIZE);
+
+function getPageQuestions(page) {
+  const start = page * PAGE_SIZE;
+  return QUESTIONS.slice(start, Math.min(start + PAGE_SIZE, TOTAL));
+}
+
+function updateProgress() {
+  const answered = answers.filter(a => a !== null).length;
+  const pct = (answered / TOTAL) * 100;
+  document.getElementById('progress-bar-inner').style.width = pct + '%';
+  document.getElementById('progress-count').textContent = answered + ' / ' + TOTAL;
+}
+
+function startQuiz() {
+  answers = new Array(TOTAL).fill(null);
+  currentPage = 0;
+  showScreen('quiz-screen');
+  renderPage(currentPage);
+  updateProgress();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function renderPage(page) {
+  const qs = getPageQuestions(page);
+  const startIdx = page * PAGE_SIZE;
+  const container = document.getElementById('questions-container');
+  
+  document.getElementById('page-indicator').textContent =
+    'ページ ' + (page + 1) + ' / ' + totalPages + '（第' + (startIdx + 1) + '問〜第' + Math.min(startIdx + qs.length, TOTAL) + '問）';
+
+  container.innerHTML = '';
+  qs.forEach((q, localIdx) => {
+    const globalIdx = startIdx + localIdx;
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    card.id = 'qcard-' + globalIdx;
+    
+    const choicesHtml = q.choices.map((choice, ci) => {
+      const labels = ['Ａ', 'Ｂ', 'Ｃ', 'Ｄ'];
+      const chosen = answers[globalIdx];
+      let btnClass = 'choice-btn';
+      if (chosen !== null) {
+        if (ci === q.answer) btnClass += ' correct';
+        else if (ci === chosen && ci !== q.answer) btnClass += ' wrong';
+      }
+      const disabled = chosen !== null ? 'disabled' : '';
+      return \`<button class="\${btnClass}" \${disabled} onclick="selectAnswer(\${globalIdx}, \${ci})">
+        <span class="choice-label">\${labels[ci]}</span>
+        <span>\${escHtml(choice)}</span>
+      </button>\`;
+    }).join('');
+
+    const chosen = answers[globalIdx];
+    let expHtml = '';
+    if (chosen !== null) {
+      const isCorrect = chosen === q.answer;
+      const expClass = isCorrect ? 'correct-exp' : 'wrong-exp';
+      const expTitle = isCorrect ? '✅ 正解です！' : '❌ 不正解です';
+      const correctLabel = ['Ａ', 'Ｂ', 'Ｃ', 'Ｄ'][q.answer];
+      expHtml = \`<div class="explanation show \${expClass}">
+        <div class="exp-title">\${expTitle}\${isCorrect ? '' : '（正解：\${correctLabel}）'}</div>
+        <div>\${escHtml(q.explain)}</div>
+      </div>\`;
+    }
+
+    card.innerHTML = \`
+      <div class="q-header">
+        <div class="q-num">\${globalIdx + 1}</div>
+        <div>
+          <div class="q-cat">\${escHtml(q.cat)}</div>
+          <div class="q-text">\${escHtml(q.q)}</div>
+        </div>
+      </div>
+      <div class="choices">\${choicesHtml}</div>
+      \${expHtml}
+    \`;
+    container.appendChild(card);
+  });
+
+  // Nav buttons
+  document.getElementById('btn-prev').style.display = page === 0 ? 'none' : '';
+  const isLastPage = page === totalPages - 1;
+  const nextBtn = document.getElementById('btn-next');
+  nextBtn.textContent = isLastPage ? '結果を見る ✨' : '次のページ →';
+  
+  window.scrollTo(0, 0);
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+const SCROLL_ANIMATION_DELAY = 50;
+const CHART_COLOR_PALETTE = [
+  '#1a56db','#059669','#d97706','#7c3aed','#db2777','#0891b2','#65a30d','#9f1239'
+];
+
+function selectAnswer(globalIdx, choiceIdx) {
+  if (answers[globalIdx] !== null) return;
+  answers[globalIdx] = choiceIdx;
+  updateProgress();
+
+  // Re-render just this card
+  const q = QUESTIONS[globalIdx];
+  const card = document.getElementById('qcard-' + globalIdx);
+  const buttons = card.querySelectorAll('.choice-btn');
+  const labels = ['Ａ', 'Ｂ', 'Ｃ', 'Ｄ'];
+
+  buttons.forEach((btn, ci) => {
+    btn.disabled = true;
+    btn.className = 'choice-btn';
+    if (ci === q.answer) btn.className += ' correct';
+    else if (ci === choiceIdx && ci !== q.answer) btn.className += ' wrong';
+  });
+
+  const isCorrect = choiceIdx === q.answer;
+  const expClass = isCorrect ? 'correct-exp' : 'wrong-exp';
+  const expTitle = isCorrect ? '✅ 正解です！' : '❌ 不正解です';
+  const correctLabel = labels[q.answer];
+
+  const expDiv = document.createElement('div');
+  expDiv.className = 'explanation show ' + expClass;
+  expDiv.innerHTML = \`<div class="exp-title">\${expTitle}\${isCorrect ? '' : '（正解：\${correctLabel}）'}</div><div>\${escHtml(q.explain)}</div>\`;
+
+  // Remove existing explanation if any
+  const existing = card.querySelector('.explanation');
+  if (existing) existing.remove();
+  card.appendChild(expDiv);
+
+  // Smooth scroll to explanation
+  setTimeout(() => expDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), SCROLL_ANIMATION_DELAY);
+}
+
+function prevPage() {
+  if (currentPage > 0) {
+    currentPage--;
+    renderPage(currentPage);
+  }
+}
+
+function nextPage() {
+  if (currentPage < totalPages - 1) {
+    currentPage++;
+    renderPage(currentPage);
+  } else {
+    showResults();
+  }
+}
+
+// ─── Results ───
+
+function showResults() {
+  showScreen('results-screen');
+  
+  // Calculate scores
+  let correctTotal = 0;
+  const catStats = {}; // cat -> { correct, total }
+
+  QUESTIONS.forEach((q, i) => {
+    const cat = q.cat;
+    if (!catStats[cat]) catStats[cat] = { correct: 0, total: 0 };
+    catStats[cat].total++;
+    if (answers[i] === q.answer) {
+      correctTotal++;
+      catStats[cat].correct++;
+    }
+  });
+
+  const score = Math.round((correctTotal / TOTAL) * 100);
+  
+  document.getElementById('score-value').innerHTML =
+    score + '<span class="score-denom">/100</span>';
+  document.getElementById('correct-count').textContent =
+    '正解数: ' + correctTotal + ' / ' + TOTAL + '問';
+
+  let msg = '';
+  if (score >= 90) msg = '🏆 素晴らしい！知財管理のエキスパートです！';
+  else if (score >= 75) msg = '🎉 優秀！知財の基礎がしっかり身についています。';
+  else if (score >= 60) msg = '👍 合格圏！苦手分野を重点的に復習しましょう。';
+  else if (score >= 40) msg = '📖 もう少し！基本的な知識を復習してみましょう。';
+  else msg = '💪 知財の学習を一からスタートしましょう！';
+  document.getElementById('score-msg').textContent = msg;
+
+  const cats = Object.keys(catStats);
+  const pcts = cats.map(c => Math.round((catStats[c].correct / catStats[c].total) * 100));
+
+  // Radar chart
+  const radarCtx = document.getElementById('radar-chart').getContext('2d');
+  new Chart(radarCtx, {
+    type: 'radar',
+    data: {
+      labels: cats.map(c => c.replace('・', '・\n')),
+      datasets: [{
+        label: '正答率 (%)',
+        data: pcts,
+        borderColor: '#1a56db',
+        backgroundColor: 'rgba(26,86,219,.15)',
+        pointBackgroundColor: '#1a56db',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: 'カテゴリ別 正答率（レーダー）', font: { size: 13 } }
+      },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { stepSize: 25, font: { size: 10 } },
+          pointLabels: { font: { size: 10 } }
+        }
+      }
+    }
+  });
+
+  // Bar chart
+  const barCtx = document.getElementById('bar-chart').getContext('2d');
+  new Chart(barCtx, {
+    type: 'bar',
+    data: {
+      labels: cats,
+      datasets: [{
+        label: '正答率 (%)',
+        data: pcts,
+        backgroundColor: cats.map((_, i) => CHART_COLOR_PALETTE[i % CHART_COLOR_PALETTE.length] + 'cc'),
+        borderColor: cats.map((_, i) => CHART_COLOR_PALETTE[i % CHART_COLOR_PALETTE.length]),
+        borderWidth: 1,
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: 'カテゴリ別 正答率（棒グラフ）', font: { size: 13 } }
+      },
+      scales: {
+        x: { min: 0, max: 100, ticks: { callback: v => v + '%' } },
+        y: { ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+
+  // Strengths & Weaknesses
+  const strengths = cats.filter((c, i) => pcts[i] >= 70);
+  const weaknesses = cats.filter((c, i) => pcts[i] < 70);
+
+  const TIPS = {
+    '特許法': '特許法の手続き（出願→審査→登録）の流れと各期間を確認しましょう。第29条（新規性・進歩性）と第35条（職務発明）は頻出です。',
+    '実用新案法': '特許法との違い（無審査主義・物品限定・存続期間10年）を整理しましょう。',
+    '意匠法': '意匠の定義・関連意匠・秘密意匠・存続期間25年（出願日起算）を押さえましょう。',
+    '商標法': '商標の種類（立体・音）、不使用取消審判、先使用権を重点的に学習しましょう。',
+    '著作権法': '著作権の発生要件・保護期間・著作隣接権・フェアユースに相当する権利制限規定を確認しましょう。',
+    '不正競争防止法': '営業秘密の3要件（秘密管理性・有用性・非公知性）と不正競争類型を整理しましょう。',
+    '国際条約・制度': 'パリ条約・PCT・マドリッド協定・ハーグ協定の特徴と優先権期間の違いを確認しましょう。',
+    '知財管理実務': 'パテントマップの活用方法とオープン＆クローズ戦略の概念を復習しましょう。',
+  };
+
+  function renderCatList(containerId, catList, showTip) {
+    const el = document.getElementById(containerId);
+    if (catList.length === 0) {
+      el.innerHTML = '<p style="color:var(--text-muted);font-size:.9rem;">該当なし</p>';
+      return;
+    }
+    el.innerHTML = catList.map(cat => {
+      const idx = cats.indexOf(cat);
+      const pct = pcts[idx];
+      const color = pct >= 70 ? '#16a34a' : pct >= 40 ? '#d97706' : '#dc2626';
+      const pctLabel = pct + '%';
+      const tip = showTip && TIPS[cat] ? \`<div class="tip-box">💡 <b>学習ヒント：</b>\${escHtml(TIPS[cat])}</div>\` : '';
+      return \`<div class="cat-row">
+        <span class="cat-name">\${escHtml(cat)}</span>
+        <div class="cat-bar-outer">
+          <div class="cat-bar-inner" style="width:\${pct}%;background:\${color}"></div>
+        </div>
+        <span class="cat-pct" style="color:\${color}">\${pctLabel}</span>
+      </div>\${tip}\`;
+    }).join('');
+  }
+
+  renderCatList('strengths-list', strengths, false);
+  renderCatList('weaknesses-list', weaknesses, true);
+}
+
+function retryQuiz() {
+  answers = new Array(TOTAL).fill(null);
+  currentPage = 0;
+  updateProgress();
+  showScreen('start-screen');
+}
+
+// Init
+updateProgress();
+</script>
+</body>
+</html>
